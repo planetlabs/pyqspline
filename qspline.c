@@ -6,15 +6,13 @@
 #define DZERO (double **)0
 #define ZERO (double *)0
 
-static PyObject *
-pyqspline(PyObject *self, PyObject *args)
+static PyObject* pyqspline(PyObject *self, PyObject *args)
 {
 
   int n, ns, maxit;
   double ds, tol;
   PyObject *wi, *wf, *x, *y;
 
-  // input args: n, ns, ds, maxit, tol, wi, wf, x, y
   if (!PyArg_ParseTuple(args, "iididOOOO", &n, &ns, &ds, &maxit, &tol, &wi, &wf, &x, &y))
     return NULL;
 
@@ -34,24 +32,59 @@ pyqspline(PyObject *self, PyObject *args)
   double **yptr;
   npy_intp ydims[2];
   PyArray_Descr *descr = PyArray_DescrFromType(NPY_DOUBLE);
-  if (PyArray_AsCArray(&y, (void *)&yptr, &ydims, 2, descr) < 0) {
+  if (PyArray_AsCArray(&y,(void *)&yptr,(npy_intp *)&ydims,2,descr) < 0) {
     Py_XDECREF(wi);
     Py_XDECREF(wf);
     Py_XDECREF(x);
     return NULL;
   }
 
-  double *t;
-  double **q, **omega, **alpha;
+  /*
+  double* t = (double *) malloc(ns*sizeof(double));
+  double** q = (double **) malloc(ns * sizeof(double*));
+  double** omega = (double **) malloc(ns * sizeof(double*));
+  double** alpha = (double **) malloc(ns * sizeof(double*));
+  int row;
+  for (row=0; row<ns; row++) {
+    q[row] = (double *) malloc(4 * sizeof(double));
+  }
+  for (row=0; row<ns; row++) {
+    omega[row] = (double *) malloc(3 * sizeof(double));
+  }
+  for (row=0; row<ns; row++) {
+    alpha[row] = (double *) malloc(3 * sizeof(double));
+  }
+  */
+  double t[10000];
+  double q[10000][4];
+  double omega[10000][3];
+  double alpha[10000][3];
+  
   qspline(n,ns,ds,maxit,tol,wiptr,wfptr,xptr,yptr,t,q,omega,alpha);
 
   Py_DECREF(wi);
   Py_DECREF(wf);
   Py_DECREF(x);
   Py_DECREF(y);
+  
+  /*
+  free(t);
+  for (row=0; row<ns; row++) {
+    free(q[row]);
+  }
+  for (row=0; row<ns; row++) {
+    free(omega[row]);
+  }
+  for (row=0; row<ns; row++) {
+    free(alpha[row]);
+  }
+  free(q);
+  free(omega);
+  free(alpha);
+  */
 
-  // should actually return arrays
-  return Py_BuildValue("i", n);
+  //return Py_BuildValue("OOOO", t, q, omega, alpha);
+  return Py_None;
 
 }
 

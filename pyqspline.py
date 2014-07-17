@@ -6,7 +6,6 @@ def pyqspline(n, ns, ds, maxit, tol, wi, wf, x, y):
     # Should probably perform some checks on the inputs
     # note that wi,wf,x and y should be numpy array
     
-    print str(y)
     output = qspline.qspline(n,ns,ds,maxit,tol,wi,wf,x,y)
     print "OUTPUT: %s" % str(output)
 

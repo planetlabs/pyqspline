@@ -1,4 +1,5 @@
 #include <Python.h>
+#include <numpy/arrayobject.h>
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -8,7 +9,50 @@
 static PyObject *
 pyqspline(PyObject *self, PyObject *args)
 {
-  return Py_BuildValue("i",12);
+
+  int n, ns, maxit;
+  double ds, tol;
+  PyObject *wi, *wf, *x, *y;
+
+  // input args: n, ns, ds, maxit, tol, wi, wf, x, y
+  if (!PyArg_ParseTuple(args, "iididOOOO", &n, &ns, &ds, &maxit, &tol, &wi, &wf, &x, &y))
+    return NULL;
+
+  wi = PyArray_FROM_OTF(wi, NPY_DOUBLE, NPY_IN_ARRAY);
+  wf = PyArray_FROM_OTF(wf, NPY_DOUBLE, NPY_IN_ARRAY);
+  x = PyArray_FROM_OTF(x, NPY_DOUBLE, NPY_IN_ARRAY);
+  if (wi==NULL || wf==NULL || x==NULL){
+    Py_XDECREF(wi);
+    Py_XDECREF(wf);
+    Py_XDECREF(x);
+    return NULL;
+  }
+  double* wiptr = (double *) PyArray_DATA(wi);
+  double* wfptr = (double *) PyArray_DATA(wf);
+  double* xptr = (double *) PyArray_DATA(x);
+
+  double **yptr;
+  npy_intp ydims[2];
+  PyArray_Descr *descr = PyArray_DescrFromType(NPY_DOUBLE);
+  if (PyArray_AsCArray(&y, (void *)&yptr, &ydims, 2, descr) < 0) {
+    Py_XDECREF(wi);
+    Py_XDECREF(wf);
+    Py_XDECREF(x);
+    return NULL;
+  }
+
+  double *t;
+  double **q, **omega, **alpha;
+  qspline(n,ns,ds,maxit,tol,wiptr,wfptr,xptr,yptr,t,q,omega,alpha);
+
+  Py_DECREF(wi);
+  Py_DECREF(wf);
+  Py_DECREF(x);
+  Py_DECREF(y);
+
+  // should actually return arrays
+  return Py_BuildValue("i", n);
+
 }
 
 static PyMethodDef QsplineMethods[] = {
@@ -21,6 +65,7 @@ PyMODINIT_FUNC
 initqspline(void)
 {
   (void) Py_InitModule("qspline", QsplineMethods);
+  import_array();
 }
 
 qspline(n,ns,ds,maxit,tol,wi,wf,x,y,t,q,omega,alpha)

@@ -29,15 +29,26 @@ static PyObject* pyqspline(PyObject *self, PyObject *args)
   double* wfptr = (double *) PyArray_DATA(wf);
   double* xptr = (double *) PyArray_DATA(x);
 
-  double **yptr;
+  double **yptrtmp;
   npy_intp ydims[2];
   PyArray_Descr *descr = PyArray_DescrFromType(NPY_DOUBLE);
-  if (PyArray_AsCArray(&y,(void *)&yptr,(npy_intp *)&ydims,2,descr) < 0) {
+  if (PyArray_AsCArray(&y,(void **)&yptrtmp,ydims,2,descr) < 0) {
     Py_XDECREF(wi);
     Py_XDECREF(wf);
     Py_XDECREF(x);
     return NULL;
   }
+  
+  //  double **yptr = (double **) malloc(ydims[0] * sizeof(double*));
+  double yptr[5][4];
+  int yi;
+  int yj;
+  for (yi=0;yi<ydims[0];yi++) {
+    //yptr[yi] = (double *) malloc(ydims[1] * sizeof(double));
+    for (yj=0;yj<ydims[1];yj++) {
+      yptr[yi][yj] = yptrtmp[yi][yj];
+    }
+  };
 
   /*
   double* t = (double *) malloc(ns*sizeof(double));
@@ -59,14 +70,37 @@ static PyObject* pyqspline(PyObject *self, PyObject *args)
   double q[10000][4];
   double omega[10000][3];
   double alpha[10000][3];
-  
+
+  /*
+  printf("n=%i\n",n);
+  printf("ns=%i\n",ns);
+  printf("ds=%f\n",ds);
+  printf("maxit=%i\n",maxit);
+  printf("tol=%f\n",tol);
+  printf("wi= %f %f %f\n",wiptr[0],wiptr[1],wiptr[2]);
+  printf("wf= %f %f %f\n",wfptr[0],wfptr[1],wfptr[2]);
+  int i;
+  for (i=0;i<n;i++){
+    printf("x= %f ", xptr[i]);
+    printf("y= %f %f %f %f\n", yptr[i][0], yptr[i][1], yptr[i][2], yptr[i][3]);
+  }
+  */
+
+  //printf("Calling qspline...\n");
   qspline(n,ns,ds,maxit,tol,wiptr,wfptr,xptr,yptr,t,q,omega,alpha);
 
-  Py_DECREF(wi);
-  Py_DECREF(wf);
-  Py_DECREF(x);
-  Py_DECREF(y);
-  
+  /*
+  for(i = 0;i < ns;i++)
+    printf(" %10.4f  %13.9f %13.9f %13.9f %13.9f\n\%13.6e %13.6e %13.6e\n\%13.6e %13.6e %13.6e\n",
+	   t[i],q[i][0],q[i][1],q[i][2],q[i][3],
+	   omega[i][0],omega[i][1],omega[i][2],alpha[i][0],alpha[i][1],alpha[i][2]);
+  */
+
+  //Py_DECREF(wi);
+  //Py_DECREF(wf);
+  //Py_DECREF(x);
+  //Py_DECREF(y);
+ 
   /*
   free(t);
   for (row=0; row<ns; row++) {
@@ -83,8 +117,17 @@ static PyObject* pyqspline(PyObject *self, PyObject *args)
   free(alpha);
   */
 
-  //return Py_BuildValue("OOOO", t, q, omega, alpha);
-  return Py_None;
+  npy_intp tdims[] = {ns};
+  PyObject* t_out = PyArray_SimpleNewFromData(1,tdims,NPY_DOUBLE,t);
+  npy_intp qdims[] = {ns,4};
+  PyObject* q_out = PyArray_SimpleNewFromData(2,qdims,NPY_DOUBLE,q);
+  npy_intp omegadims[] = {ns,3};
+  PyObject* omega_out = PyArray_SimpleNewFromData(2,omegadims,NPY_DOUBLE,omega);
+  npy_intp alphadims[] = {ns,3};
+  PyObject* alpha_out = PyArray_SimpleNewFromData(2,alphadims,NPY_DOUBLE,alpha);
+
+  return Py_BuildValue("OOOO", t_out, q_out, omega_out, alpha_out);
+  // return Py_None;
 
 }
 
@@ -187,6 +230,21 @@ double ds, tol, wi[], wf[], x[], y[][4], t[], q[][4], omega[][3], alpha[][3];
   int i, j;
   double dx, xi, *h, *a, *b, *c, *dtheta, **e, **w, **wprev;
   double dum1[3], dum2[3], getang();
+
+  /*
+  printf("n=%i\n",n);
+  printf("ns=%i\n",ns);
+  printf("ds=%f\n",ds);
+  printf("maxit=%i\n",maxit);
+  printf("tol=%f\n",tol);
+  printf("wi= %f %f %f\n",wi[0],wi[1],wi[2]);
+  printf("wf= %f %f %f\n",wf[0],wf[1],wf[2]);
+  int ben;
+  for (ben=0;ben<n;ben++){
+    printf("x= %f ", x[ben]);
+    printf("y= %f %f %f %f\n", y[ben][0], y[ben][1], y[ben][2], y[ben][3]);
+  }
+  */
 
   /* error checking. */
 

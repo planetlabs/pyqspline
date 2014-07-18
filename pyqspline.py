@@ -12,6 +12,7 @@ def pyqspline(n, ns, ds, maxit, tol, wi, wf, x, y):
               'omega': omega,
               'alpha': alpha,
               }
+
     return result
 
 def test():
@@ -29,7 +30,27 @@ def test():
 
     result = pyqspline(data.shape[0],nout,-1,10,1.0e-6,wi,wf,data[:,0],data[:,1:])
 
-    print result.get('q')
+    nomfile = open('out.dat','r')
+    nominal = { 't':[]),
+                'q':[]),
+                'omega':[]),
+                'alpha':[]),
+                }
+    rows =  nomfile.readlines()
+    m = len(rows)/3
+    for i in range(m):
+        t,qx,qy,qz,qs = [x for x in rows[i*3].strip().split(' ') if x!='']
+        omega = [x for x in rows[i*3+1].strip().split(' ') if x!='']
+        alpha = [x for x in rows[i*3+2].strip().split(' ') if x!='']
+        nominal['t'].append(t)
+        nomdial['q'].append([qx,qy,qz,qs])
+        nominal['omega'].append(omega)
+        nominal['alpha'].append(alpha)
+    nominal['t'] = numpy.array(nominal.get('t'))
+    nominal['q'] = numpy.array(nominal.get('q'))
+    nominal['omega'] = numpy.array(nominal.get('omega'))
+    nominal['alpha'] = numpy.aaray(nominal.get('alpha'))
+    import pdb;psb.set_trace()
 
 if __name__=='__main__':
     test()

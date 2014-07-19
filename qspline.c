@@ -1,139 +1,73 @@
 #include <Python.h>
-#include <numpy/arrayobject.h>
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #define DZERO (double **)0
 #define ZERO (double *)0
 
+static double* loadarray(PyObject *listobject, int m)
+{
+  int i;
+  double* x = (double *) malloc(m*sizeof(double));
+  for (i=0;i<m;i++) {
+    x[i] = PyFloat_AsDouble(PyList_GetItem(listobject,i));
+  }
+  return x;
+}
+
 static PyObject* pyqspline(PyObject *self, PyObject *args)
 {
 
-  int n, ns, maxit;
+  int i, n, ns, maxit;
   double ds, tol;
-  PyObject *wi, *wf, *x, *y;
+  PyObject *wi_object, *wf_object, *x_object, *y_object;
+  double *wi, *wf, *x, *y, *t;
+  double **q, **omega, **alpha;
 
-  if (!PyArg_ParseTuple(args, "iididOOOO", &n, &ns, &ds, &maxit, &tol, &wi, &wf, &x, &y))
+  if (!PyArg_ParseTuple(args, "iididOOOO", &n, &ns, &ds, &maxit, &tol, &wi_object, &wf_object, &x_object, &y_object))
     return NULL;
 
-  wi = PyArray_FROM_OTF(wi, NPY_DOUBLE, NPY_IN_ARRAY);
-  wf = PyArray_FROM_OTF(wf, NPY_DOUBLE, NPY_IN_ARRAY);
-  x = PyArray_FROM_OTF(x, NPY_DOUBLE, NPY_IN_ARRAY);
-  if (wi==NULL || wf==NULL || x==NULL){
-    Py_XDECREF(wi);
-    Py_XDECREF(wf);
-    Py_XDECREF(x);
-    return NULL;
-  }
-  double* wiptr = (double *) PyArray_DATA(wi);
-  double* wfptr = (double *) PyArray_DATA(wf);
-  double* xptr = (double *) PyArray_DATA(x);
+  wi = loadarray(wi_object,3);
+  wf = loadarray(wf_object,3);
+  x = loadarray(x_object,n);
+  y = loadarray(y_object,4*n);
 
-  double **yptrtmp;
-  npy_intp ydims[2];
-  PyArray_Descr *descr = PyArray_DescrFromType(NPY_DOUBLE);
-  if (PyArray_AsCArray(&y,(void **)&yptrtmp,ydims,2,descr) < 0) {
-    Py_XDECREF(wi);
-    Py_XDECREF(wf);
-    Py_XDECREF(x);
-    return NULL;
-  }
-  
-  //  double **yptr = (double **) malloc(ydims[0] * sizeof(double*));
-  double yptr[5][4];
-  int yi;
-  int yj;
-  for (yi=0;yi<ydims[0];yi++) {
-    //yptr[yi] = (double *) malloc(ydims[1] * sizeof(double));
-    for (yj=0;yj<ydims[1];yj++) {
-      yptr[yi][yj] = yptrtmp[yi][yj];
-    }
-  };
+  t = (double *) malloc(ns*sizeof(double));
+  q = (double *) malloc(4*ns*sizeof(double));
+  omega = (double *) malloc(3*ns*sizeof(double));
+  alpha = (double *) malloc(3*ns*sizeof(double));
 
-  /*
-  double* t = (double *) malloc(ns*sizeof(double));
-  double** q = (double **) malloc(ns * sizeof(double*));
-  double** omega = (double **) malloc(ns * sizeof(double*));
-  double** alpha = (double **) malloc(ns * sizeof(double*));
-  int row;
-  for (row=0; row<ns; row++) {
-    q[row] = (double *) malloc(4 * sizeof(double));
-  }
-  for (row=0; row<ns; row++) {
-    omega[row] = (double *) malloc(3 * sizeof(double));
-  }
-  for (row=0; row<ns; row++) {
-    alpha[row] = (double *) malloc(3 * sizeof(double));
-  }
-  */
-  double t[10000];
-  double q[10000][4];
-  double omega[10000][3];
-  double alpha[10000][3];
-
-  /*
   printf("n=%i\n",n);
   printf("ns=%i\n",ns);
   printf("ds=%f\n",ds);
   printf("maxit=%i\n",maxit);
   printf("tol=%f\n",tol);
-  printf("wi= %f %f %f\n",wiptr[0],wiptr[1],wiptr[2]);
-  printf("wf= %f %f %f\n",wfptr[0],wfptr[1],wfptr[2]);
-  int i;
+  printf("wi= %f %f %f\n",wi[0],wi[1],wi[2]);
+  printf("wf= %f %f %f\n",wf[0],wf[1],wf[2]);
   for (i=0;i<n;i++){
-    printf("x= %f ", xptr[i]);
-    printf("y= %f %f %f %f\n", yptr[i][0], yptr[i][1], yptr[i][2], yptr[i][3]);
+    printf("x= %f ", x[i]);
+    printf("y= %f %f %f %f\n", y[i*4], y[i*4+1], y[i*4+2], y[i*4+3]);
   }
-  */
+  printf("Calling qspline...\n");
+  qspline(n,ns,ds,maxit,tol,wi,wf,x,y,t,q,omega,alpha);
+  printf("qspline returned.\n");
+  for(i=0;i<100;i++)
+    printf(" %f  %f %f %f %f\n%f %f %f\n%f %f %f\n",
+	   t[i],q[4*i],q[4*i+1],q[4*i+2],q[4*i+3],
+	   omega[3*i],omega[3*i+1],omega[3*i+2],alpha[3*i],alpha[3*i+1],alpha[3*i+2]);
 
-  //printf("Calling qspline...\n");
-  qspline(n,ns,ds,maxit,tol,wiptr,wfptr,xptr,yptr,t,q,omega,alpha);
+  //return Py_BuildValue("OOOO", t_out, q_out, omega_out, alpha_out);
 
-  /*
-  for(i = 0;i < ns;i++)
-    printf(" %10.4f  %13.9f %13.9f %13.9f %13.9f\n\%13.6e %13.6e %13.6e\n\%13.6e %13.6e %13.6e\n",
-	   t[i],q[i][0],q[i][1],q[i][2],q[i][3],
-	   omega[i][0],omega[i][1],omega[i][2],alpha[i][0],alpha[i][1],alpha[i][2]);
-  */
-
-  //Py_DECREF(wi);
-  //Py_DECREF(wf);
-  //Py_DECREF(x);
-  //Py_DECREF(y);
- 
-  /*
-  free(t);
-  for (row=0; row<ns; row++) {
-    free(q[row]);
-  }
-  for (row=0; row<ns; row++) {
-    free(omega[row]);
-  }
-  for (row=0; row<ns; row++) {
-    free(alpha[row]);
-  }
-  free(q);
-  free(omega);
-  free(alpha);
-  */
-
-  npy_intp tdims[] = {ns};
-  PyObject* t_out = PyArray_SimpleNewFromData(1,tdims,NPY_DOUBLE,t);
-  npy_intp qdims[] = {ns,4};
-  PyObject* q_out = PyArray_SimpleNewFromData(2,qdims,NPY_DOUBLE,q);
-  npy_intp omegadims[] = {ns,3};
-  PyObject* omega_out = PyArray_SimpleNewFromData(2,omegadims,NPY_DOUBLE,omega);
-  npy_intp alphadims[] = {ns,3};
-  PyObject* alpha_out = PyArray_SimpleNewFromData(2,alphadims,NPY_DOUBLE,alpha);
-
-  return Py_BuildValue("OOOO", t_out, q_out, omega_out, alpha_out);
-  // return Py_None;
+  free(wi);
+  free(wf);
+  free(x);
+  free(y);
+  return Py_None;
 
 }
 
 static PyMethodDef QsplineMethods[] = {
-  {"qspline", pyqspline, METH_VARARGS,
-   "Produces a quaternion spline interpolation of sparse data."},
+  {"qspline", pyqspline, METH_VARARGS, "Produces a quaternion spline interpolation of sparse data."},
   {NULL, NULL, 0, NULL}
 };
 
@@ -141,10 +75,9 @@ PyMODINIT_FUNC
 initqspline(void)
 {
   (void) Py_InitModule("qspline", QsplineMethods);
-  import_array();
 }
 
-qspline(n,ns,ds,maxit,tol,wi,wf,x,y,t,q,omega,alpha)
+qspline(n,ns,ds,maxit,tol,wi,wf,x,yflat,t,qflat,omegaflat,alphaflat)
 /*
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -225,13 +158,33 @@ COPYRIGHT (C) 2003 by James McEnnan
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 */
 int n, ns, maxit;
-double ds, tol, wi[], wf[], x[], y[][4], t[], q[][4], omega[][3], alpha[][3];
+double ds, tol, wi[], wf[], x[], yflat[], t[], qflat[], omegaflat[], alphaflat[];
 {
   int i, j;
   double dx, xi, *h, *a, *b, *c, *dtheta, **e, **w, **wprev;
   double dum1[3], dum2[3], getang();
 
+  double **y = (double **) malloc(n*sizeof(double*));
+  for (i=0;i<n;i++) {
+    y[i] = (double *) malloc(4*sizeof(double));
+    for (j=0;j<4;j++) {
+      y[i][j] = yflat[4*i+j];
+    }
+  }
   /*
+  double **q = (double **) malloc(ns*sizeof(double*));
+  double **omega = (double **) malloc(ns*sizeof(double*));
+  double **alpha = (double **) malloc(ns*sizeof(double*));
+  for (i=0;i<ns;i++){
+    q[i] = (double *) malloc(4*sizeof(double));
+    omega[i] = (double *) malloc(3*sizeof(double));
+    alpha[i] = (double *) malloc(3*sizeof(double));
+  }
+  */
+  double q[10000][4];
+  double omega[10000][3];
+  double alpha[10000][3];
+
   printf("n=%i\n",n);
   printf("ns=%i\n",ns);
   printf("ds=%f\n",ds);
@@ -239,12 +192,10 @@ double ds, tol, wi[], wf[], x[], y[][4], t[], q[][4], omega[][3], alpha[][3];
   printf("tol=%f\n",tol);
   printf("wi= %f %f %f\n",wi[0],wi[1],wi[2]);
   printf("wf= %f %f %f\n",wf[0],wf[1],wf[2]);
-  int ben;
-  for (ben=0;ben<n;ben++){
-    printf("x= %f ", x[ben]);
-    printf("y= %f %f %f %f\n", y[ben][0], y[ben][1], y[ben][2], y[ben][3]);
+  for (i=0;i<n;i++){
+    printf("x= %f ", x[i]);
+    printf("y= %f %f %f %f\n", y[i][0], y[i][1], y[i][2], y[i][3]);
   }
-  */
 
   /* error checking. */
 
@@ -456,6 +407,17 @@ double ds, tol, wi[], wf[], x[], y[][4], t[], q[][4], omega[][3], alpha[][3];
   }
 
   freeall(n,h,a,b,c,dtheta,e,w,wprev);
+
+  for (i=0;i<ns;i++) {
+    for (j=0;j<3;j++) {
+      qflat[4*i+j] = q[i][j];
+      omegaflat[3*i+j] = omega[i][j];
+      alphaflat[3*i+j] = alpha[i][j];
+    }
+    qflat[4*i+3] = q[i][3];
+  }
+  
+  printf("%f\n",alphaflat[12]);
 
   return ns;
 }

@@ -1,56 +1,44 @@
 import qspline
 import numpy
+import matplotlib.pyplot as plt
 
-def pyqspline(n, ns, ds, maxit, tol, wi, wf, x, y):
+def flatten(nestedlist):
+    return [item for sub in nestedlist for item in sub] 
 
-    # Should probably perform some checks on the inputs
-    # note that wi,wf,x and y should be numpy array
-    
-    [t,q,omega,alpha] = qspline.qspline(n,ns,ds,maxit,tol,wi,wf,x,y)
-    result = {'t':t,
-              'q':q,
-              'omega': omega,
-              'alpha': alpha,
-              }
-
-    return result
+def pyqspline(n,ns,ds,maxit,tol,wi,wf,x,y):
+    qspline.qspline(n,ns,ds,maxit,tol,wi,wf,x,flatten(y))
+    exit(0)
 
 def test():
     datafile = open('in.dat','r')
-
-    wi = numpy.array([float(w) for w in datafile.readline().split(' ')],dtype="double")
-    wf = numpy.array([float(w) for w in datafile.readline().split(' ')],dtype="double")
-
+    wi = [float(w) for w in datafile.readline().split(' ')]
+    wf = [float(w) for w in datafile.readline().split(' ')]
     nout = int(datafile.readline())
-
-    data = []
+    x = []
+    y = []
     for row in datafile.readlines():
-        data.append([q for q in row.strip().split(' ') if q!=''])
-    data = numpy.array(data,dtype="double")
+        t,qx,qy,qz,qs = [float(q) for q in row.strip().split(' ') if q!='']
+        x.append(t)
+        y.append([qx,qy,qz,qs])
 
-    result = pyqspline(data.shape[0],nout,-1,10,1.0e-6,wi,wf,data[:,0],data[:,1:])
+    rt,rq,romega,ralpha = pyqspline(len(x),nout,-1,10,0.000001,wi,wf,x,y)
 
-    nomfile = open('out.dat','r')
-    nominal = { 't':[]),
-                'q':[]),
-                'omega':[]),
-                'alpha':[]),
-                }
-    rows =  nomfile.readlines()
-    m = len(rows)/3
-    for i in range(m):
+    ndatafile = open('out.dat','r')
+    rows =  ndatafile.readlines()
+    nt = []
+    nq = []
+    nomega = []
+    nalpha = []
+    for i in range(len(rows)/3):
         t,qx,qy,qz,qs = [x for x in rows[i*3].strip().split(' ') if x!='']
-        omega = [x for x in rows[i*3+1].strip().split(' ') if x!='']
-        alpha = [x for x in rows[i*3+2].strip().split(' ') if x!='']
-        nominal['t'].append(t)
-        nomdial['q'].append([qx,qy,qz,qs])
-        nominal['omega'].append(omega)
-        nominal['alpha'].append(alpha)
-    nominal['t'] = numpy.array(nominal.get('t'))
-    nominal['q'] = numpy.array(nominal.get('q'))
-    nominal['omega'] = numpy.array(nominal.get('omega'))
-    nominal['alpha'] = numpy.aaray(nominal.get('alpha'))
-    import pdb;psb.set_trace()
+        nt.append(t)
+        nq.append([qx,qy,qz,qs])
+        nomega.append([x for x in rows[i*3+1].strip().split(' ') if x!=''])
+        nalpha.append([x for x in rows[i*3+2].strip().split(' ') if x!=''])
 
+    plt.plot(nt, numpy.array(nq)[:,3], 'go')
+    plt.plot(rt, numpy.array(rq)[:,3], 'ro')
+    plt.show()
+    
 if __name__=='__main__':
     test()

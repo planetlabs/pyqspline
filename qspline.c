@@ -5,6 +5,9 @@
 #define DZERO (double **)0
 #define ZERO (double *)0
 
+void slew3_init(double dt, double dtheta, double* e, double* wi, double* ai, double* wf, double* af);
+void slew3(double t, double dt, double* qi, double* q, double* omega, double* alpha, double* jerk);
+
 static double* loadarray(PyObject *listobject, int m)
 {
   int i;
@@ -18,11 +21,10 @@ static double* loadarray(PyObject *listobject, int m)
 static PyObject* pyqspline(PyObject *self, PyObject *args)
 {
 
-  int i, n, ns, maxit;
+  int i, j, n, ns, maxit;
   double ds, tol;
   PyObject *wi_object, *wf_object, *x_object, *y_object;
-  double *wi, *wf, *x, *y, *t;
-  double **q, **omega, **alpha;
+  double *wi, *wf, *x, *y, *t, *q, *omega, *alpha;
 
   if (!PyArg_ParseTuple(args, "iididOOOO", &n, &ns, &ds, &maxit, &tol, &wi_object, &wf_object, &x_object, &y_object))
     return NULL;
@@ -37,6 +39,7 @@ static PyObject* pyqspline(PyObject *self, PyObject *args)
   omega = (double *) malloc(3*ns*sizeof(double));
   alpha = (double *) malloc(3*ns*sizeof(double));
 
+  /*
   printf("n=%i\n",n);
   printf("ns=%i\n",ns);
   printf("ds=%f\n",ds);
@@ -48,21 +51,49 @@ static PyObject* pyqspline(PyObject *self, PyObject *args)
     printf("x= %f ", x[i]);
     printf("y= %f %f %f %f\n", y[i*4], y[i*4+1], y[i*4+2], y[i*4+3]);
   }
-  printf("Calling qspline...\n");
+  */
+
+  //printf("Calling qspline...\n");
+  
   qspline(n,ns,ds,maxit,tol,wi,wf,x,y,t,q,omega,alpha);
-  printf("qspline returned.\n");
-  for(i=0;i<100;i++)
+  
+  //printf("qspline returned.\n");
+  
+  /*
+  for(i=0;i<ns;i++)
     printf(" %f  %f %f %f %f\n%f %f %f\n%f %f %f\n",
 	   t[i],q[4*i],q[4*i+1],q[4*i+2],q[4*i+3],
 	   omega[3*i],omega[3*i+1],omega[3*i+2],alpha[3*i],alpha[3*i+1],alpha[3*i+2]);
+  */
 
-  //return Py_BuildValue("OOOO", t_out, q_out, omega_out, alpha_out);
+  PyObject* t_out = PyList_New(ns);
+  PyObject* q_out = PyList_New(4*ns);
+  PyObject* omega_out = PyList_New(3*ns);
+  PyObject* alpha_out = PyList_New(3*ns);
+  for (i=0;i<ns;i++) {
+    PyList_SetItem(t_out,i,PyFloat_FromDouble(t[i]));
+    for (j=0;j<3;j++) {
+      PyList_SetItem(q_out,4*i+j,PyFloat_FromDouble(q[4*i+j]));
+      PyList_SetItem(omega_out,3*i+j,PyFloat_FromDouble(omega[3*i+j]));
+      PyList_SetItem(alpha_out,3*i+j,PyFloat_FromDouble(alpha[3*i+j]));
+    }
+    PyList_SetItem(q_out,4*i+3,PyFloat_FromDouble(q[4*i+3]));
+  }
 
+  //Py_DECREF(wi_object);
+  //Py_DECREF(wf_object);
+  //Py_DECREF(x_object);
+  //Py_DECREF(y_object);
   free(wi);
   free(wf);
   free(x);
   free(y);
-  return Py_None;
+  free(t);
+  free(q);
+  free(omega);
+  free(alpha);
+
+  return Py_BuildValue("OOOO",t_out,q_out,omega_out,alpha_out);
 
 }
 
@@ -77,7 +108,8 @@ initqspline(void)
   (void) Py_InitModule("qspline", QsplineMethods);
 }
 
-qspline(n,ns,ds,maxit,tol,wi,wf,x,yflat,t,qflat,omegaflat,alphaflat)
+qspline(int n, int ns, double ds, int maxit, double tol, double* wi, double* wf, double* x, double* yflat,
+  double* t, double* qflat, double* omegaflat, double* alphaflat)
 /*
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -157,8 +189,6 @@ COPYRIGHT (C) 2003 by James McEnnan
 
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 */
-int n, ns, maxit;
-double ds, tol, wi[], wf[], x[], yflat[], t[], qflat[], omegaflat[], alphaflat[];
 {
   int i, j;
   double dx, xi, *h, *a, *b, *c, *dtheta, **e, **w, **wprev;
@@ -171,7 +201,7 @@ double ds, tol, wi[], wf[], x[], yflat[], t[], qflat[], omegaflat[], alphaflat[]
       y[i][j] = yflat[4*i+j];
     }
   }
-  /*
+  
   double **q = (double **) malloc(ns*sizeof(double*));
   double **omega = (double **) malloc(ns*sizeof(double*));
   double **alpha = (double **) malloc(ns*sizeof(double*));
@@ -179,22 +209,6 @@ double ds, tol, wi[], wf[], x[], yflat[], t[], qflat[], omegaflat[], alphaflat[]
     q[i] = (double *) malloc(4*sizeof(double));
     omega[i] = (double *) malloc(3*sizeof(double));
     alpha[i] = (double *) malloc(3*sizeof(double));
-  }
-  */
-  double q[10000][4];
-  double omega[10000][3];
-  double alpha[10000][3];
-
-  printf("n=%i\n",n);
-  printf("ns=%i\n",ns);
-  printf("ds=%f\n",ds);
-  printf("maxit=%i\n",maxit);
-  printf("tol=%f\n",tol);
-  printf("wi= %f %f %f\n",wi[0],wi[1],wi[2]);
-  printf("wf= %f %f %f\n",wf[0],wf[1],wf[2]);
-  for (i=0;i<n;i++){
-    printf("x= %f ", x[i]);
-    printf("y= %f %f %f %f\n", y[i][0], y[i][1], y[i][2], y[i][3]);
   }
 
   /* error checking. */
@@ -415,14 +429,23 @@ double ds, tol, wi[], wf[], x[], yflat[], t[], qflat[], omegaflat[], alphaflat[]
       alphaflat[3*i+j] = alpha[i][j];
     }
     qflat[4*i+3] = q[i][3];
+    free(q[i]);
+    free(omega[i]);
+    free(alpha[i]);
   }
+  free(q);
+  free(omega);
+  free(alpha);
+  for (i=0;i<n;i++) {
+    free(y[i]);
+  }
+  free(y);
   
-  printf("%f\n",alphaflat[12]);
-
   return ns;
 }
 
-freeall(n,h,a,b,c,dtheta,e,w,wprev)
+freeall(int n, double* h, double* a, double* b, double* c, 
+  double* dtheta, double** e, double** w, double** wprev)
 /*
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 purpose
@@ -482,8 +505,6 @@ COPYRIGHT (C) 2003 by James McEnnan
 
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 */
-int n;
-double *h, *a, *b, *c, *dtheta, **e, **w, **wprev;
 {
   int i;
 
@@ -509,7 +530,7 @@ double *h, *a, *b, *c, *dtheta, **e, **w, **wprev;
   free(h);
 }
 
-double getang(qi,qf,e)
+double getang(double* qi, double* qf, double* e)
 /*
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -559,7 +580,6 @@ COPYRIGHT (C) 2003 by James McEnnan
 
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 */
-double qi[], qf[], e[];
 {
   double dtheta, sa, ca, temp[3], unvec();
 
@@ -576,7 +596,8 @@ double qi[], qf[], e[];
   return dtheta;
 }
 
-rates(n,maxit,tol,wi,wf,h,a,b,c,dtheta,e,w,wprev)
+rates(int n,int maxit, double tol, double* wi, double* wf, double* h, 
+  double* a, double* b, double* c, double* dtheta, double** e, double** w, double** wprev)
 /*
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -646,8 +667,6 @@ COPYRIGHT (C) 2003 by James McEnnan
 
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 */
-int n, maxit;
-double tol, wi[], wf[], h[], *a, *b, *c, *dtheta, **e, **w, **wprev;
 {
   int i, j, iter;
   double dw, temp1[3], temp2[3];
@@ -733,7 +752,7 @@ double tol, wi[], wf[], h[], *a, *b, *c, *dtheta, **e, **w, **wprev;
 }
 
 #define EPS 1.0e-6
-bd(e,dtheta,flag,xin,xout)
+bd(double* e, double dtheta, int flag, double* xin, double* xout)
 /*
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -792,8 +811,6 @@ COPYRIGHT (C) 2003 by James McEnnan
 
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 */
-int flag;
-double dtheta, e[], xin[], xout[];
 {
   int i;
   double sa, ca, b0, b1, b2, temp1[3], temp2[3];
@@ -834,7 +851,7 @@ double dtheta, e[], xin[], xout[];
   return 0;
 }
 
-rf(e,dtheta,win,rhs)
+rf(double* e, double dtheta, double* win, double* rhs)
 /*
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -887,7 +904,6 @@ COPYRIGHT (C) 2003 by James McEnnan
 
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 */
-double dtheta, e[], win[], rhs[];
 {
   int i;
   double sa, ca, dot, mag, c1, r0, r1, temp1[3], temp2[3];
@@ -922,7 +938,7 @@ double dtheta, e[], win[], rhs[];
 }
 
 static double a[3][3], b[3][3], c[2][3], d[3];
-slew3_init(dt,dtheta,e,wi,ai,wf,af)
+void slew3_init(double dt, double dtheta, double* e, double* wi, double* ai, double* wf, double* af)
 /*
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -983,7 +999,6 @@ COPYRIGHT (C) 2003 by James McEnnan
 
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 */
-double dt, dtheta, e[], wi[], ai[], wf[], af[];
 {
   int i;
   double sa, ca, c1, c2;
@@ -1035,9 +1050,10 @@ double dt, dtheta, e[], wi[], ai[], wf[], af[];
 
        d[i] = (    c[0][i] +     c[1][i])/dt;
   }
+
 }
 
-slew3(t,dt,qi,q,omega,alpha,jerk)
+void slew3(double t, double dt, double* qi, double* q, double* omega, double* alpha, double* jerk)
 /*
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -1096,7 +1112,6 @@ COPYRIGHT (C) 2003 by James McEnnan
 
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 */
-double t, dt, qi[], q[], omega[], alpha[], jerk[];
 {
   int i;
   double x, ang, sa, ca, u[3], x1[2], unvec();
@@ -1226,9 +1241,10 @@ double t, dt, qi[], q[], omega[], alpha[], jerk[];
        jerk[i] = th3[i] - 0.5*temp1[i];
     }
   }
+
 }
 
-double unvec(a,au)
+double unvec(double* a, double* au)
 /*
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -1275,7 +1291,6 @@ COPYRIGHT (C) 2003 by James McEnnan
 
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 */
-double a[], au[];
 {
   double amag;
 
@@ -1297,7 +1312,7 @@ double a[], au[];
   return amag;
 }
 
-crossp(b,c,a)
+crossp(double* b, double* c, double* a)
 /*
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -1346,7 +1361,6 @@ COPYRIGHT (C) 2003 by James McEnnan
 
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 */
-double a[], b[], c[];
 {
   a[0] = b[1]*c[2] - b[2]*c[1];
   a[1] = b[2]*c[0] - b[0]*c[2];

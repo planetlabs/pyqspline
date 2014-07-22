@@ -68,9 +68,17 @@ def test():
         nomega.append([x for x in rows[i*3+1].strip().split(' ') if x!=''])
         nalpha.append([x for x in rows[i*3+2].strip().split(' ') if x!=''])
 
-    plt.plot(nt, numpy.array(nq), 'gD')
-    plt.plot(rt, numpy.array(rq), 'rx')
-    plt.show()
+    # plt.plot(nt, numpy.array(nq), 'gD')
+    # plt.plot(rt, numpy.array(rq), 'rx')
+    # plt.show()
     
+    import scipy.io
+    matr = numpy.zeros([len(rt),3])
+    matr[:,0] = rt
+    matq = numpy.array(rq)
+    # matq[:,0] = numpy.array(rq)[:,-1]
+    # matq[:,-1] = numpy.array(rq)[:,0]
+    scipy.io.savemat('../vis/data.mat',dict(r=matr,q=matq))
+
 if __name__=='__main__':
     test()

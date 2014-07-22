@@ -39,32 +39,7 @@ static PyObject* pyqspline(PyObject *self, PyObject *args)
   omega = (double *) malloc(3*ns*sizeof(double));
   alpha = (double *) malloc(3*ns*sizeof(double));
 
-  /*
-  printf("n=%i\n",n);
-  printf("ns=%i\n",ns);
-  printf("ds=%f\n",ds);
-  printf("maxit=%i\n",maxit);
-  printf("tol=%f\n",tol);
-  printf("wi= %f %f %f\n",wi[0],wi[1],wi[2]);
-  printf("wf= %f %f %f\n",wf[0],wf[1],wf[2]);
-  for (i=0;i<n;i++){
-    printf("x= %f ", x[i]);
-    printf("y= %f %f %f %f\n", y[i*4], y[i*4+1], y[i*4+2], y[i*4+3]);
-  }
-  */
-
-  //printf("Calling qspline...\n");
-  
   qspline(n,ns,ds,maxit,tol,wi,wf,x,y,t,q,omega,alpha);
-  
-  //printf("qspline returned.\n");
-  
-  /*
-  for(i=0;i<ns;i++)
-    printf(" %f  %f %f %f %f\n%f %f %f\n%f %f %f\n",
-	   t[i],q[4*i],q[4*i+1],q[4*i+2],q[4*i+3],
-	   omega[3*i],omega[3*i+1],omega[3*i+2],alpha[3*i],alpha[3*i+1],alpha[3*i+2]);
-  */
 
   PyObject* t_out = PyList_New(ns);
   PyObject* q_out = PyList_New(4*ns);
@@ -80,10 +55,6 @@ static PyObject* pyqspline(PyObject *self, PyObject *args)
     PyList_SetItem(q_out,4*i+3,PyFloat_FromDouble(q[4*i+3]));
   }
 
-  //Py_DECREF(wi_object);
-  //Py_DECREF(wf_object);
-  //Py_DECREF(x_object);
-  //Py_DECREF(y_object);
   free(wi);
   free(wf);
   free(x);

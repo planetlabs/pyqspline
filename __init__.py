@@ -1,14 +1,26 @@
-import numpy
-import matplotlib.pyplot as plt
 from qspline import qspline
 
-
 def pyqspline(n,ns,ds,maxit,tol,wi,wf,x,y):
+
+    if n<4:
+        raise ValueError('n must be greater or equal to 4')
+    if ns<2:
+        raise ValueError('ns must be greater or equal to 2')
+    if len(wi)!=3:
+        raise ValueError('wi must be size 3')
+    if len(wf)!=3:
+        raise ValueError('wf must be size 3')
+    if len(x)!=n:
+        raise ValueError('x must have the same length as n')
+    if len(y)!=n:
+        raise ValueError('y must have the same length as y')
+    for i in range(n):
+        if len(y[i])!=4:
+            raise ValueError('y must have 4 columns')
+
     t, q, omega, alpha = qspline(n,ns,ds,maxit,tol,wi,wf,x,flatten(y))
-    q_out = unflatten(q,ns,4)
-    omega_out = unflatten(omega,ns,3)
-    alpha_out = unflatten(alpha,ns,3)
-    return [t,q_out,omega_out,alpha_out]
+    
+    return [t,unflatten(q,ns,4),unflatten(omega,ns,3),unflatten(alpha,ns,3)]
 
 def flatten(nestedlist):
     return [item for sub in nestedlist for item in sub] 
@@ -23,7 +35,14 @@ def unflatten(flatlist,m,n):
     return out
 
 def test():
-    datafile = open('in.dat','r')
+    import os
+    import numpy
+    import matplotlib.pyplot as plt
+
+    indatapath = os.path.join(os.path.dirname(os.path.abspath(__file__)),'in.dat')
+    outdatapath = os.path.join(os.path.dirname(os.path.abspath(__file__)),'out.dat')
+
+    datafile = open(indatapath,'r')
     wi = [float(w) for w in datafile.readline().split(' ')]
     wf = [float(w) for w in datafile.readline().split(' ')]
     nout = int(datafile.readline())
@@ -36,7 +55,7 @@ def test():
 
     rt,rq,romega,ralpha = pyqspline(len(x),nout,-1,10,0.000001,wi,wf,x,y)
 
-    ndatafile = open('out.dat','r')
+    ndatafile = open(outdatapath,'r')
     rows =  ndatafile.readlines()
     nt = []
     nq = []

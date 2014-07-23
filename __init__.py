@@ -36,8 +36,6 @@ def unflatten(flatlist,m,n):
 
 def test():
     import os
-    import numpy
-    import matplotlib.pyplot as plt
 
     indatapath = os.path.join(os.path.dirname(os.path.abspath(__file__)),'in.dat')
     outdatapath = os.path.join(os.path.dirname(os.path.abspath(__file__)),'out.dat')
@@ -68,17 +66,17 @@ def test():
         nomega.append([x for x in rows[i*3+1].strip().split(' ') if x!=''])
         nalpha.append([x for x in rows[i*3+2].strip().split(' ') if x!=''])
 
-    # plt.plot(nt, numpy.array(nq), 'gD')
-    # plt.plot(rt, numpy.array(rq), 'rx')
-    # plt.show()
+    import matplotlib.pyplot as plt
+    import numpy
+    plt.plot(nt, numpy.array(nq), 'gD')
+    plt.plot(rt, numpy.array(rq), 'rx')
+    plt.show()
     
-    import scipy.io
-    matr = numpy.zeros([len(rt),3])
-    matr[:,0] = rt
-    matq = numpy.array(rq)
-    # matq[:,0] = numpy.array(rq)[:,-1]
-    # matq[:,-1] = numpy.array(rq)[:,0]
-    scipy.io.savemat('../vis/data.mat',dict(r=matr,q=matq))
+    # import scipy.io
+    # matr = numpy.zeros([len(rt),3])
+    # matr[:,0] = rt
+    # matq = numpy.array(rq)
+    # scipy.io.savemat('../vis/data.mat',dict(r=matr,q=matq))
 
 if __name__=='__main__':
     test()

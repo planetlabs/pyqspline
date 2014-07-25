@@ -35,6 +35,10 @@ static PyObject* pytocqspline(PyObject *self, PyObject *args)
   x = loadarray(x_object,n);
   y = loadarray(y_object,4*n);
 
+  if(ds > 0.0) {
+    ns = (int) ((x[n - 1] - x[0])/ds) + 1;
+  }
+
   t = (double *) malloc(ns*sizeof(double));
   q = (double *) malloc(4*ns*sizeof(double));
   omega = (double *) malloc(3*ns*sizeof(double));

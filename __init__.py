@@ -1,24 +1,32 @@
-from qspline import qspline
+import qspline
 
 def pyqspline(n,ns,ds,maxit,tol,wi,wf,x,y):
+
+    # tuples throw off qspline, check sizes and also
+    # make sure they are list objects
 
     if n<4:
         raise ValueError('n must be greater or equal to 4')
     if ns<2:
         raise ValueError('ns must be greater or equal to 2')
+    wi = list(wi)
     if len(wi)!=3:
         raise ValueError('wi must be size 3')
+    wf = list(wf)
     if len(wf)!=3:
         raise ValueError('wf must be size 3')
+    x = list(x)
     if len(x)!=n:
         raise ValueError('x must have the same length as n')
+    y = list(y)
     if len(y)!=n:
         raise ValueError('y must have the same length as y')
     for i in range(n):
+        y[i] = list(y[i])
         if len(y[i])!=4:
             raise ValueError('y must have 4 columns')
 
-    t, q, omega, alpha = qspline(n,ns,ds,maxit,tol,wi,wf,x,flatten(y))
+    t,q,omega,alpha = qspline.pytocqspline(n,ns,ds,maxit,tol,wi,wf,x,flatten(y))
     
     return [t,unflatten(q,ns,4),unflatten(omega,ns,3),unflatten(alpha,ns,3)]
 
@@ -71,12 +79,6 @@ def test():
     plt.plot(nt, numpy.array(nq), 'gD')
     plt.plot(rt, numpy.array(rq), 'rx')
     plt.show()
-    
-    # import scipy.io
-    # matr = numpy.zeros([len(rt),3])
-    # matr[:,0] = rt
-    # matq = numpy.array(rq)
-    # scipy.io.savemat('../vis/data.mat',dict(r=matr,q=matq))
 
 if __name__=='__main__':
     test()

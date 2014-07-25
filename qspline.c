@@ -13,12 +13,13 @@ static double* loadarray(PyObject *listobject, int m)
   int i;
   double* x = (double *) malloc(m*sizeof(double));
   for (i=0;i<m;i++) {
-    x[i] = PyFloat_AsDouble(PyList_GetItem(listobject,i));
+    PyObject* item = PyList_GetItem(listobject,i);
+    x[i] = PyFloat_AsDouble(item);
   }
   return x;
 }
 
-static PyObject* pyqspline(PyObject *self, PyObject *args)
+static PyObject* pytocqspline(PyObject *self, PyObject *args)
 {
 
   int i, j, n, ns, maxit;
@@ -69,7 +70,7 @@ static PyObject* pyqspline(PyObject *self, PyObject *args)
 }
 
 static PyMethodDef QsplineMethods[] = {
-  {"qspline", pyqspline, METH_VARARGS, "Produces a quaternion spline interpolation of sparse data."},
+  {"pytocqspline", pytocqspline, METH_VARARGS, "Produces a quaternion spline interpolation of sparse data."},
   {NULL, NULL, 0, NULL}
 };
 

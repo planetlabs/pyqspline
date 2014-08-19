@@ -1,7 +1,7 @@
 import os
 import math
 import unittest
-from __init__ import pyqspline
+import pyqspline
 
 class PyQsplineTest(unittest.TestCase):
 
@@ -21,7 +21,7 @@ class PyQsplineTest(unittest.TestCase):
             x.append(t)
             y.append([qx,qy,qz,qs])
 
-        rt,rq,romega,ralpha = pyqspline(len(x),0,0.5,10,0.000001,wi,wf,x,y)
+        rt,rq,romega,ralpha = pyqspline.interpolate(len(x),0,0.5,10,0.000001,wi,wf,x,y)
 
         ndatafile = open(nominalpath,'r')
         rows =  ndatafile.readlines()

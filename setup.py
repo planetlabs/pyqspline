@@ -1,9 +1,8 @@
 from distutils.core import setup, Extension
 
-qspline = Extension('qspline',
-                    sources = ['qspline.c'])
-
 setup(name = 'pyqspline',
-      version = '1.0',
+      version = '0.1',
+      author = 'Benoit Landry',
       description = 'Python version of qspline, which produces a quaternion spline interpolation of sparse data.',
-      ext_modules = [qspline])
+      py_modules = ['pyqspline'],
+      ext_modules = [Extension('qspline', sources=['qspline.c'])])

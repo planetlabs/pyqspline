@@ -1,6 +1,6 @@
 import qspline
 
-def pyqspline(n,ns,ds,maxit,tol,wi,wf,x,y):
+def interpolate(n,ns,ds,maxit,tol,wi,wf,x,y):
 
     if ds>0:
         ns = int((x[-1]-x[0])/ds)+1

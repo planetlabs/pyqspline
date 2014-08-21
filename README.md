@@ -18,3 +18,8 @@ Usage
     times,quats,omega,alpha = pyqspline.interpolate(len(x),0,0.5,10,0.000001,wi,wf,x,y)
     
     time_series = zip(times,quats)
+    
+Contact
+-------
+* James McEnnan, jmcennan@mailaps.org
+* Planet Labs, benoit.landry@cosmogia.com

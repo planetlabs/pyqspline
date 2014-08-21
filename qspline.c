@@ -1,5 +1,6 @@
 /*
-COPYRIGHT (C) 2003 by James McEnnan, 2014 by Planet Labs
+COPYRIGHT (C) 2003 by James McEnnan
+COPYRIGHT (C) 2014 by Planet Labs
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by

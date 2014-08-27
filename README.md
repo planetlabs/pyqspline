@@ -22,4 +22,4 @@ Usage
 Contact
 -------
 * James McEnnan, jmcennan@mailaps.org
-* Planet Labs, benoit.landry@cosmogia.com
+* Planet Labs, pyqspline@planet.com

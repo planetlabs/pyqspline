@@ -17,6 +17,8 @@ COPYRIGHT (C) 2014 by Planet Labs
     02110-1301 USA.
 """
 
+from __future__ import division
+
 import os
 import math
 import unittest
@@ -32,28 +34,32 @@ class PyQsplineTest(unittest.TestCase):
         nominalpath = os.path.join(
             os.path.dirname(os.path.abspath(__file__)), 'nominal.dat')
 
-        datafile = open(samplespath, 'r')
-        wi = [float(w) for w in datafile.readline().split(' ')]
-        wf = [float(w) for w in datafile.readline().split(' ')]
+        with open(samplespath) as f:
+            wi = [float(w) for w in f.readline().split(' ')]
+            wf = [float(w) for w in f.readline().split(' ')]
 
-        x = []
-        y = []
-        for row in datafile.readlines():
-            t, qx, qy, qz, qs = [
-                float(q) for q in row.strip().split(' ') if q != '']
-            x.append(t)
-            y.append([qx, qy, qz, qs])
+            x = []
+            y = []
+            for row in f.readlines():
+                t, qx, qy, qz, qs = [
+                    float(q) for q in row.strip().split(' ') if q != '']
+                x.append(t)
+                y.append([qx, qy, qz, qs])
 
         rt, rq, romega, ralpha = pyqspline.interpolate(
             len(x), 0, 0.5, 10, 0.000001, wi, wf, x, y)
 
-        ndatafile = open(nominalpath, 'r')
-        rows = ndatafile.readlines()
+        with open(nominalpath) as f:
+            rows = f.readlines()
         nt = []
         nq = []
         nomega = []
         nalpha = []
-        for i in range(len(rows) / 3):
+
+        rng_stop = len(rows) / 3
+        assert rng_stop.is_integer()
+        rng_stop = int(rng_stop)
+        for i in range(rng_stop):
             t, qx, qy, qz, qs = [
                 x for x in rows[i * 3].strip().split(' ') if x != '']
             nt.append(float(t))

@@ -97,11 +97,30 @@ static PyMethodDef QsplineMethods[] = {
   {NULL, NULL, 0, NULL}
 };
 
+
+#if PY_MAJOR_VERSION >= 3
+static struct PyModuleDef pyqspline =
+{
+    // See https://docs.python.org/3/c-api/module.html#c.PyModuleDef
+    PyModuleDef_HEAD_INIT,
+    "pyqspline",
+    "",
+    -1,
+    QsplineMethods
+};
+
+PyMODINIT_FUNC
+PyInit_qspline(void)
+{
+  return PyModule_Create(&pyqspline);
+}
+#else
 PyMODINIT_FUNC
 initqspline(void)
 {
   (void) Py_InitModule("qspline", QsplineMethods);
 }
+#endif
 
 qspline(int n, int ns, double ds, int maxit, double tol, double* wi, double* wf, double* x, double* yflat,
   double* t, double* qflat, double* omegaflat, double* alphaflat)
